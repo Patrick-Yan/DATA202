@@ -1,0 +1,288 @@
+---
+title: "Assignment4"
+author: "Yan Zichu,300476924"
+date: "9/21/2020"
+output: pdf_document
+---
+***
+# Q1. (10 Mark) 
+Recall the Monty Hall Problem, but now suppose that there is $10,000 behind one door and goats behind the other two doors. The contestant selects a door and then is presented with two options:
+
+1.End the game and take $3,000.
+2.Have Monty Hall select one of the other two doors randomly. If the selected door contains $10,000, the player automatically loses. If the selected door contains a goat, then the player has another two options:
+        * stick with their initial choice or
+        * change doors.
+Of the three possible options (end the game and take $3,000, play on but stick with their initial choice, or play on but change doors), which strategy (or strategies) produce(s) the largest expected value for winnings? Simulate 1,000,000 plays of the game using each strategy to answer this question.
+
+**ANS**
+
+```{r}
+N <- 100
+set.seed(0)
+
+win.end <- rep(NA, N)
+win.stick <- rep(NA, N)
+win.change <- rep(NA, N)
+
+for(i in 1:N){
+  
+  prize.door <- sample(1 : 3, size = 1)
+	contestant.door <- sample(1 : 3, size = 1)
+	
+	first.choice<- sample(1:2, size = 1)
+	if(first.choice == 1){
+	  	win.end[i] <- 3000
+	  	
+	}else{
+	  	monty.options <- 1 : 3
+	    monty.options <- monty.options[monty.options != contestant.door]
+    	monty.door <- sample(monty.options, size = 1)
+    	
+    	if(monty.door != prize.door){
+    	  second.choice<- sample(1:2, size = 1)
+        if(second.choice == 1 && contestant.door == prize.door){
+          win.stick[i] <- 10000
+          
+        }else {
+          contestant.options <- 1 : 3
+	        contestant.door <- contestant.options[contestant.options != monty.door & contestant.options != contestant.door]
+	        
+          if(second.choice == 2 && contestant.door == prize.door){
+            win.change[i] <- 10000
+          }
+         }
+    	}
+	 }
+}
+
+
+```
+
+```{r}
+a<- 3000 * table(win.end)/N 
+b<- 10000 * table(win.stick)/N
+c<- 10000 * table(win.change)/N
+a
+b
+c
+```
+As we can see above,the best strategy(largest expected value) is contestant end the game at the begging and take that $3000 back home directly.
+
+# Q2. (12 Mark) 
+Consider the following network, which contains information on the provision of financial assistance between Allison, Bob, Cass, Denis, Eliot, and Francis:
+
+Allison gave money to Eliot and Francis.
+Bob gave money to Allison and Francis.
+Cass gave money to Denis.
+Denis gave money to Cass and Bob.
+Eliot gave money to Francis.
+Francis gave money to Bob and Allison.
+
+a.[2 marks] Is this an example of a social network or a bipartite network? Why?
+
+**ANS**
+
+This is a social network. Because the nodes are all of a similar type.
+
+b.[1 mark] Is the network directed or undirected?
+
+**ANS**
+
+This network is directed.
+
+c.[4 marks] Create a network object called financial.assist.net which reflects the financial assistance network and which has the names of the actors appropriately reflected in the vertex.names node attribute. Output the adjacency matrix for this network object.
+
+**ANS**
+
+```{r}
+library(network)
+financial.assist.matrix <- matrix(c(NA, 0, 0, 0, 1, 1, 
+               1, NA, 0, 1, 0, 0, 
+               0, 0, NA, 1, 0, 0, 
+               0, 1, 1, NA, 0, 0, 
+               0, 0, 0, 0, NA, 1,
+               1, 1, 0, 0, 0, NA),
+               nrow = 6, byrow = TRUE,
+               dimnames = list(c("Allison", "Bob", "Cass", "Denis", "Eliot", "Francis"),
+                               c("Allison", "Bob", "Cass", "Denis", "Eliot", "Francis")))
+
+financial.assist.net <- network(financial.assist.matrix)
+set.vertex.attribute(financial.assist.net, attrname = "vertex.names",
+                     value = c("Allison", "Bob", "Cass", "Denis", "Eliot", "Francis"))
+financial.assist.matrix
+financial.assist.net
+
+```
+
+d. [2 marks] Calculate the number of transitive triads using an appropriate function, and report which actors comprise any transitive triads.
+
+**ANS**
+
+Bob,Allison and Francis comprise atransitive triads. Besides, Allison, Eliot and Francis comprise another one.(Shown below)
+```{r}
+library(sna)
+gtrans(financial.assist.net,measure = "weakcensus")
+```
+e. [1 mark] Is Allison adjacent to Bob?
+
+**ANS**
+
+No.
+```{r}
+is.adjacent(financial.assist.net, 1, 2)
+# is.adjacent(financial.assist.net, 2, 1)
+```
+f. [2 marks] Produce a plot of the network with node labels.
+
+**ANS**
+
+```{r}
+plot(financial.assist.net,displaylabels = TRUE)
+
+```
+
+
+
+
+# Q3. (12 Mark) 
+```{r}
+# Load the 'rda' package for network datasets.
+#install.packages(devtools)
+#library(devtools)
+#install_github("pschmied/rda")
+library(rda)
+# Load the 1990s country conflicts dataset.
+data(conflict90s)
+# Access the weighted sociomatrix of conflicts.
+head(conflict90s$conflicts,3)
+# Access nodal variables.  Columns correspond to population size, GDP, and polity measure, respectively.
+head(conflict90s$nodevars)
+```
+
+a. [4 marks] Create a network object called conflict.net for the network data of country conflicts (see code above for extracting the sociomatrix).
+
+**ANS**
+
+```{r}
+conflict.net <- network(conflict90s$conflicts)
+conflict.net %e% "conflicts" <- conflict90s$conflicts[, 1]
+conflict.net %v% "pop" <- conflict90s$nodevars[,1]
+conflict.net %v% "gdp" <- conflict90s$nodevars[,2]
+conflict.net %v% "polity" <- ifelse(conflict90s$nodevars[,3] < -5 , 1,
+                              ifelse(conflict90s$nodevars[,3] >= -5 & conflict90s$nodevars[,3] < 0 , 2,
+                               ifelse(conflict90s$nodevars[,3] >= 0 & conflict90s$nodevars[,3] < 5 ,3, 
+                                      4)))
+print(conflict.net)
+get.vertex.attribute(conflict.net, attrname = "polity")
+
+```
+b. [3 marks] Produce a visual display of the conflict data to help understand whether the polity score is important in explaining which countries engage in conflicts. Clearly explain how you have represented this node attribute in your plot, and comment on whether polity score appears to be relevant in explaining which countries engaged in conflicts.
+
+**ANS**
+
+The polity score is not important in explaining which countries engage in conflicts because as we can see the plot below, all kinds of countries in different score range engage in conflicts. I reflect them in different colors. Although the counties with polity score equals to 2 are very less, but most of them are engage in conflicts same as other countries in different score.
+```{r}
+plot(conflict.net,vertex.sides = ifelse(conflict.net %v% "polity"==1,50,
+                                      ifelse(conflict.net %v% "polity"==2,4,
+                                             ifelse(conflict.net %v% "polity"==3,5,
+                                                    3))),
+     vertex.col = conflict.net %v% "polity",
+     edge.col = gray(0.5))
+legend("topleft", title = "polity score", legend = sort(unique(conflict.net %v% "polity")), 
+       fill = sort(unique(conflict.net %v% "polity")), cex = 0.75)
+```
+
+c. [3 marks] Do most conflicts appear to be mutual, or is it more likely for there to be imbalance/assymetry in conflicts?
+
+**ANS**
+
+Most of conflicts are imbalanced.
+```{r}
+dyad.census(conflict.net)
+```
+
+d. [3 marks] Calculate the network density by hand. (You may use the number of edges reported by the network object conflict.net from Part a.) Use an appropriate function to verify this.
+
+**ANS**
+
+In hand is  $\frac {203} {N(N-1)}  = \frac {203}  {130 * (130 - 1)} = \frac {203} {16770}=0.1210495$
+```{r}
+gden(conflict.net) # Density
+```
+e. [3 marks] What are the maximum in-degree and maximum out-degree? Which country or countries correspond to the maximum in-degree and maximum out-degree?
+
+**ANS**
+max in-degree is 15, max out-degree is 27.
+Iraq correspond to the maximum in-degree and maximum out-degree.
+```{r}
+indegree <- degree(conflict.net, cmode="indegree") 
+max(indegree)
+
+outdegree <- degree(conflict.net, cmode="outdegree")
+max(outdegree)
+
+
+get.vertex.attribute(conflict.net,"vertex.names")[which(indegree %in% max(indegree))]
+get.vertex.attribute(conflict.net,"vertex.names")[which(outdegree %in% max(outdegree))]
+
+```
+
+Q4. (10 Marks)
+
+Write a function called er.graph to simulate networks according to an Erdős–Rényi (or Bernoulli) model. There are several variants of the Erdős–Rényi model, but the simplest version (and the one you should implement for er.graph) uses a Bernoulli distribution to randomly generate edges for each possible edge in the network with common probability p (i.e., for each pair of nodes, the probability of an edge between the two nodes is p). Your function should perform error checking for arguments. (Note: You should not make use of functions from any other packages [such as network, sna, etc.] in your function.)
+
+**ANS**
+
+```{r}
+er.graph <- function(n, tprob = 0.5, mode = "digraph"){
+  # error check
+  if (n %% 1 != 0 | n<=0) return("n should be a positive integer.") 
+  else if (tprob<0 | tprob>1) return("tprob should between 0 and 1") 
+  else if(mode!="graph" & mode!="digraph") return("mode should be either graph or digraph")
+  
+  matrix <- matrix(0, nrow=n, ncol=n, byrow=TRUE) 
+  diag(matrix) <- NA
+  
+  if (mode == "digraph") max.edges.num <- n*(n - 1) 
+  else if (mode == "graph") max.edges.num <- n*(n - 1)/2
+  
+  bernoulli <- rbinom(max.edges.num, size = 1, prob = tprob) 
+  #maximum edges: max.edges.num
+  #bernoulli: bernoulli
+  if (mode == "digraph"){ 
+    i <- 0
+    for (row in c(1:n)){ 
+      for (col in c(1:n)){
+        if (row != col){
+          i <- i + 1
+          matrix[row, col] <- bernoulli[i]
+        } 
+      }
+    } 
+  }else if (mode == "graph"){ 
+    i <- 0
+    for (row in c(1:(n-1))){
+      for (col in c((row+1):n)){
+        i <- i + 1
+        matrix[row, col] <- bernoulli[i] 
+        matrix[col, row] <- bernoulli[i]
+      } 
+    }
+  }
+  if (mode == "digraph") er.net <- network(matrix, directed = TRUE) 
+  else if (mode == "graph")er.net <- network(matrix, directed = FALSE)
+  
+  plot(er.net, displaylabels = TRUE, vertex.cex = 1.5, arrowhead.cex = 1.5) 
+}
+#return(matrix)
+```
+
+```{r}
+set.seed(0)
+er.graph(6.5)
+er.graph(6, tprob = 1.1)
+er.graph(6, tprob = 1, mode = 'directed')
+er.graph(8, tprob = 0.2)
+er.graph(8, tprob = 0.5, mode = 'graph')
+```
+

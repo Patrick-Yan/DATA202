@@ -1,0 +1,246 @@
+---
+title: "STAT393_Assignment2"
+author: "SHI YUNQI"
+date: "2020/9/9"
+output: pdf_document
+---
+
+```{r}
+library(MASS)
+attach(Boston)
+head(Boston)
+```
+
+Q1.
+
+```{r}
+# Design matrix
+X <- model.matrix(medv ~ lstat + age, data = Boston)
+X[1:10,] ## the fist 10 rows of the matrix.
+```
+
+The fist 10 rows of the matrix are shown above.
+
+Q2.
+
+```{r}
+y = medv
+beta_hat <- solve(t(X)%*%X) %*% t(X) %*% y
+library(pander)
+pander(data.frame(beta_hat))
+
+```
+
+LSE of $\hat{\boldsymbol{\beta}_0}$ is 33.22, LSE of $\hat{\boldsymbol{\beta}_1}$ is -1.032, LSE of $\hat{\boldsymbol{\beta}_2}$ is 0.03454.
+
+Q3.
+
+```{r}
+y_hat <- X %*% beta_hat
+y_hat[1:10,] ## t the first 10 predicted values
+```
+
+The first 10 predicted values are 30.335350, 26.515202, 31.174183, 31.770610, 29.594138, 29.873436, 22.694801, 16.778358, 5.787382, 18.541747.
+
+Q4.
+
+```{r}
+SSE = t(y-y_hat)%*%(y-y_hat)
+pander(c(SSE=SSE))
+```
+
+SSE is 19168.
+
+Q5.
+
+```{r}
+n <- length(y)
+n
+p <- ncol(X)
+p
+RSE <- sqrt(SSE/(n-p))
+RSE
+```
+
+Residual standard error is 6.173136.
+
+Q6.
+
+```{r}
+Var_beta_hat=as.numeric(RSE^2)*solve(t(X)%*%X)
+Var_beta_hat
+
+SE = c(sqrt(Var_beta_hat[1,1]),sqrt(Var_beta_hat[2,2]),sqrt(Var_beta_hat[3,3]))
+SE_beta_hat0 <-sqrt(Var_beta_hat[1,1])
+SE_beta_hat0 ## se(betahat 0)
+SE_beta_hat1 <- sqrt(Var_beta_hat[2,2])
+SE_beta_hat1 ## se(betahat 1)
+SE_beta_hat2 <- sqrt(Var_beta_hat[3,3])
+SE_beta_hat2 ## se(betahat 2)
+
+```
+The variance matrix of beta_hat is shown above.
+
+SE($\hat{\boldsymbol{\beta}_0}$) is 0.7308471, SE($\hat{\boldsymbol{\beta}_1}$) is 0.04819073, SE($\hat{\boldsymbol{\beta}_2}$) is 0.01222547.
+
+Q7.
+
+```{r}
+# Get the coefficient matrix
+model <- lm(medv ~ lstat + age, data = Boston)
+Coef <- summary(model)$coefficients
+Coef
+```
+
+Interpretation: When the value of lstat and age is zero, then the value of the median value of owner-occupied homes is 33.22276053. For given amount of age, an additional 1 unit on lstat leads to an deccrease in the median value of owner-occupied homes by approximately 1.03206856 units. For given amount of lstat, an additional 1 unit on age leads to an increase in the median value of owner-occupied homes by approximately 0.03454434 units.
+
+
+```{r}
+# 95% confidence intervals
+lolim=Coef[,1] - qt(0.975,n-p)*Coef[,2]
+uplim=Coef[,1] + qt(0.975,n-p)*Coef[,2]
+pander(data.frame(lolim,uplim))
+```
+
+Interpretation: $\beta_0$ is the slope of this model. We are 95% confident that the median value of owner-occupied homes is expected to be as low as 31.79 units and as high as 34.66 units in $1000s if the value of lstat and age is zero. With 95% of confidence, for an additional 1 unit of lower status of the population, the increase is as low as -1.127 units and as high as -0.9374 units. For an additional 1 unit of proportion of owner-occupied units built prior to 1940, with 95% of confidence, the increase is as low as 0.01053 units and as high as 0.05856 units.
+
+Q8.
+
+```{r}
+## t-test statistic for testing H0: beta_i=0 vs H1: beta_i is not equal to 0. i = 0,1,2.
+ 
+T <- beta_hat/SE ## t-test statistic
+T
+p_val = 2 * (1-pt(abs(T),n-p))
+p_val
+
+```
+
+For testing $H_0$: $\beta_0$=0 vs $H_1$: $\beta_0$ is not equal to 0. The t-test statisticis is 45.457881 with $t_{503}$ df, p-value is nearly equal to 0, which is < 0.05, so $\beta_0$ is not equal to 0, which means we have enough evidence to reject $H_0$, the parameter $\beta_0$ is statistically significant different from 0, which has influence on the median value of owner-occupied homes in $1000s.
+
+For testing $H_0$: $\beta_1$=0 vs $H_1$: $\beta_1$ is not equal to 0. The t-test statisticis is -21.416330 with $t_{503}$ df, p-value is is nearly equal to 0, which is < 0.05, so $\beta_1$ is not equal to 0, which means we have enough evidence to reject $H_0$, the parameter $\beta_1$ is statistically significant different from 0, which has influence on the median value of owner-occupied homes in $1000s.
+
+For testing $H_0$: $\beta_2$=0 vs $H_1$: $\beta_2$ is not equal to 0. The t-test statisticis is 2.825605 with $t_{503}$ df. p-value is 0.004906776 < 0.05, so $\beta_2$ is not equal to 0, which means we have enough evidence to reject $H_0$, the parameter $\beta_2$ is statistically significant different from 0, which has influence on the median value of owner-occupied homes in $1000s.
+
+Q9.
+
+```{r}
+y_bar=mean(y)
+SST = t(y-y_bar)%*%(y-y_bar)
+SSR = t(y_hat-y_bar)%*%(y_hat-y_bar)
+pander(c(SST=SST,SSR=SSR, SSE=SSE))
+
+##Check the equation: SST = SSR + SSE
+S=round(SSR + SSE,0) ## round to integer
+S
+```
+
+We have SST = 42716, SSR =  23548, SSE = 19168 and then we get S=SSR+SSE, which is equal to 42716 by using R to calculate, i.e. equal to the value of SST (round to integer), so SST = SSR + SSE.
+
+Q10.
+
+```{r}
+p=ncol(X)
+F=(SSR/(p-1))/(SSE/(n-p))## F test statistic
+p_val=pf(F, (p-1), (n-p), lower.tail = FALSE)
+pander(c(F=F, p_value = p_val))
+
+```
+
+Since the p-value is very small, which is nearly equal to 0, we reject $H_0$. We conclude that we have strong evidence that at least one at lstat and age have effect on the median value of owner-occupied homes in $1000s.
+
+Q11.
+
+```{r}
+## compute R square
+R_square <- SSR/SST
+R_square
+
+## compute adjusted R square
+adjusted_R_square <- 1-((SSE/(n-p))/(SST/(n-1)))
+adjusted_R_square
+```
+
+So R square is 0.5512689, adjusted R square is 0.5494847.
+Interpretation: R squared means 55.13% of the variation in the output variable is explained by the input variables. Adjusted R square calculates R square from only those variables whose addition in the model which are significant is 54.95%.
+
+Q12.
+
+```{r}
+model <- lm(medv ~ lstat + age, data = Boston)
+model.matrix(model)[1:10,]
+summary(model)$coef
+summary(model)$sigma
+summary(model)$r.squared
+summary(model)$adj.r.squared
+summary(model)$fstatistic
+confint(model)
+vcov(model)
+```
+
+From above results, the code reproduce the before calculation.
+
+Q13.
+
+```{r}
+new = data.frame(lstat=c(mean(lstat)), age=c(mean(age)))
+#95% confidence interval for y
+predict(model, newdata=new,interval = "confidence" )
+#95% prediction interval for y
+predict(model, newdata=new,interval = "prediction" )
+```
+
+95% confidence interval for y is (21.99364, 23.07198) with fit value = 22.53281, 95% prediction interval for y is (10.39252,34.67309) with fit value = 22.53281.
+
+Q14.
+
+```{r}
+model1 = lm(medv ~ 1 )
+model2 = lm(medv ~ lstat)
+model3 = lm(medv ~ lstat + age )
+anova(model1, model2, model3)
+```
+
+model1 vs model2:
+$H_0$: model1 is true, $H_1$: model2 is true.
+test statistic: F = 609.955 with F(1,504) df.
+P-value < 2.2e-16 < 0.05, reject $H_0$, indicating given that lstat in the model has effect on medv, so we choose model2.
+
+model2 vs model3:
+$H_0$: model2 is true, $H_1$: model3 is true.
+test statistic: F = 7.984 with F(1,503) df.
+P-value =0.004907 < 0.05, reject $H_0$, indicating given that lstat and age in the model has effect on medv, so we choose model3.
+
+Q15.
+
+```{r}
+pander(AIC(model1,model2,model3))
+pander(BIC(model1,model2,model3))
+```
+
+Both AIC and BIC choose the model 3 as the best model among the 3 models.
+
+Q16.
+
+```{r}
+##R square for the 3 models
+summary(model1)$r.squared
+summary(model2)$r.squared
+summary(model3)$r.squared
+
+```
+
+R square for model1 is 0, for model2 is 0.5441463, for model3 is 0.5512689.
+
+```{r}
+## adjust R square for the 3 models
+summary(model1)$adj.r.squared
+summary(model2)$adj.r.squared
+summary(model3)$adj.r.squared
+
+```
+
+adjust R square for model1 is 0, for model2 is 0.5432418, for model3 is 0.5494847.
+
+There are large increase of R square from 0 to 0.5441463 for the addition of variable lstat. The increase
+is around 0.01 for the addition of variable age. The adjusted R squared can be used for model comparison. Since the model 3 has the largest adj_R_sq = 0.5494847, the model 3 is the best model among the 3 models.

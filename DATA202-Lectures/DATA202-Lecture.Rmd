@@ -1,0 +1,684 @@
+---
+title: "Week 5"
+author: "Richard Arnold"
+date: "August 11, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(DBI)
+library(RSQLite)
+test_conn <- dbConnect(SQLite(), "newdb.sqlite")
+dbListTables(test_conn)
+```
+
+```{r}
+surf <- read.csv("surf.csv", stringsAsFactors=FALSE)
+dbWriteTable(test_conn, "surfshort", surf[1:10,1:8], overwrite=TRUE)
+
+ss <- dbGetQuery(test_conn, "SELECT * FROM surfshort")
+ss
+```
+
+```{sql connection=test_conn}
+SELECT * FROM surfshort
+```
+
+```{sql connection=test_conn, output.var="sss"}
+SELECT * FROM surfshort
+```
+
+```{r}
+sss
+```
+
+```{sql connection=test_conn}
+SELECT * FROM surfshort
+```
+```{sql connection=test_conn}
+SELECT Gender, Income, Income, Hours 
+FROM   surfshort
+```
+
+```{sql connection=test_conn}
+SELECT Gender, Income, Income, Hours 
+FROM   surfshort
+WHERE  Income>900
+```
+
+```{sql connection=test_conn}
+SELECT Gender, Income, Income, Hours 
+FROM   surfshort
+WHERE  (Income>300 AND Gender="male") 
+       OR Gender="female"
+```
+
+```{sql connection=test_conn}
+SELECT Gender, Qualification, Hours 
+FROM   surfshort
+WHERE  (Income>300 AND Gender="male") 
+       AND Qualification <> "none"   
+       
+       
+```
+<> is != in sql
+```{sql connection=test_conn}
+SELECT Gender, Qualification, Hours 
+FROM   surfshort
+WHERE  (Income>300 AND Gender="male") 
+       AND Qualification <> "none"
+       AND Age>30 AND Age<40
+```
+
+
+```{sql connection=test_conn}
+SELECT Gender, Qualification, Hours 
+FROM   surfshort
+WHERE  Qualification LIKE "n%"
+```
+% is a wild card
+
+
+```{sql connection=test_conn}
+SELECT Gender, Qualification, Hours, Age
+FROM   surfshort
+WHERE  Income > 200
+ORDER BY Age
+```
+
+```{sql connection=test_conn}
+SELECT Gender, Qualification, Hours, Age
+FROM   surfshort
+WHERE  Income > 200
+ORDER BY Age DESC, Qualification
+```
+
+```{sql connection=test_conn}
+SELECT Gender, Qualification, Hours, Age
+FROM   surfshort
+WHERE  Income > 200
+ORDER BY Qualification, Age DESC
+```
+
+# Create a table in the database
+
+```{r}
+dbListTables(test_conn)
+```
+
+
+```{sql connection=test_conn}
+CREATE TABLE lecturers (
+   first_name     TEXT,
+   last_name      TEXT,
+   start_week     INTEGER,
+   end_week       INTEGER, 
+   school         TEXT
+)
+```
+
+```{r}
+dbListTables(test_conn)
+```
+
+************************************************************************************************************
+************************************************************************************************************
+************************************ week6 *****************************************************************
+************************************************************************************************************
+************************************************************************************************************
+
+```{r}
+courses <- read.csv("courses.csv", stringsAsFactors=FALSE)
+students <- read.csv("students.csv", stringsAsFactors=FALSE)
+enrolments <- read.csv("enrolments.csv", stringsAsFactors=FALSE)
+courses
+students
+enrolments
+```
+
+```{r}
+dbDisconnect(test_conn)
+file.remove("newdb.sqlite")
+library(DBI)
+library(RSQLite)
+test_conn <- dbConnect(SQLite(), "newdb.sqlite")
+dbListTables(test_conn)
+```
+
+```{r}
+surf <- read.csv("surf.csv", stringsAsFactors=FALSE)
+dbWriteTable(test_conn, "surf", surf[,1:8], overwrite=TRUE)
+ss <- dbGetQuery(test_conn, "SELECT * FROM surf")
+ss[1:3,]
+```
+
+```{sql connection=test_conn}
+SELECT MAX(Age) FROM surf
+```
+
+# Create a table in the database
+
+```{r}
+dbListTables(test_conn)
+```
+
+```{sql connection=test_conn}
+SELECT * FROM lecturers
+```
+
+```{sql connection=test_conn}
+CREATE TABLE lecturers (
+   first_name     TEXT,
+   last_name      TEXT,
+   start_week     INTEGER,
+   end_week       INTEGER, 
+   school         TEXT
+)
+```
+
+
+```{sql connection=test_conn}
+SELECT * FROM lecturers
+```
+
+```{r}
+dbListTables(test_conn)
+```
+
+```{sql connection=test_conn}
+INSERT INTO lecturers (first_name, last_name, school)
+VALUES
+('Richard', 'Arnold', 'SMS'),
+('Louise','McMillan','SMS'),
+('Ryan','Admiraal','SMS'),
+('John','Haywood','SMS')
+```
+```{sql connection=test_conn}
+SELECT * FROM lecturers
+```
+# Changing data in existing rows
+
+```{sql connection=test_conn}
+UPDATE lecturers
+SET start_week=1, end_week=6
+WHERE first_name = 'Richard'
+```
+
+```{sql connection=test_conn}
+SELECT * FROM lecturers
+```
+
+
+```{sql connection=test_conn}
+UPDATE lecturers
+SET start_week=7, end_week=8
+WHERE first_name = 'Louise'
+```
+```{sql connection=test_conn}
+UPDATE lecturers
+SET start_week=9, end_week=12
+WHERE first_name = 'Ryan'
+```
+```{sql connection=test_conn}
+UPDATE lecturers SET School='Mathematics and Statistics'
+```
+# Removing a row from a table
+
+```{sql connection=test_conn}
+DELETE FROM lecturers WHERE start_week IS NULL
+```
+
+```{sql connection=test_conn}
+SELECT * FROM lecturers
+```
+
+# Kill all the rows in a table
+
+```{sql connection=test_conn}
+SELECT * FROM surf
+```
+
+```{sql connection=test_conn}
+DELETE FROM surf
+```
+
+```{sql connection=test_conn}
+SELECT * FROM surf
+```
+# Removing a table and its definition
+
+```{sql connection=test_conn}
+DROP TABLE surf
+```
+
+```{sql connection=test_conn}
+SELECT * FROM surf
+```
+Handy version: gives no error if the table does not actually exist:
+
+```{sql connection=test_conn}
+DROP TABLE IF EXISTS surf
+```
+
+This version *does* give an error if the table does not exist
+
+```{sql connection=test_conn}
+DROP TABLE surf
+```
+
+
+# Recap
+
+CREATE TABLE (create a table)
+
+INSERT (add rows)
+UPDATE (change data in existing rows)
+DELETE (remove rows)
+
+DROP TABLE (remove a table completely)
+
+# Functions in SQL SELECT
+
+```{r}
+dbWriteTable(test_conn, "surf", surf, owerwrite=TRUE)
+```
+
+
+
+
+```{sql connection=test_conn}
+SELECT * FROM surf WHERE Marital = 'never'
+```
+
+```{sql connection=test_conn}
+SELECT COUNT(*) FROM surf
+```
+
+```{sql connection=test_conn}
+SELECT COUNT(*) FROM surf WHERE Marital = 'never'
+```
+
+```{sql connection=test_conn}
+SELECT Marital, COUNT(*) 
+FROM surf 
+GROUP BY Marital
+```
+```{sql connection=test_conn}
+SELECT Marital, COUNT(*) AS Number
+FROM surf 
+GROUP BY Marital
+```
+
+```{sql connection=test_conn}
+SELECT Marital, COUNT(*) AS Number, MIN(Age) AS Agemin, MAX(Age) AS Agemax
+FROM surf 
+GROUP BY Marital
+```
+
+```{sql connection=test_conn}
+SELECT Marital, COUNT(*) AS Number, MIN(Age) AS Agemin, MAX(Age) AS Agemax
+FROM surf 
+GROUP BY Marital
+ORDER BY MIN(Age)
+```
+
+
+```{sql connection=test_conn}
+SELECT Marital, Age FROM surf WHERE age>40
+```
+The WHERE statement subsets by individual rows
+
+The HAVING statement does the same thing for groups created by GROUP BY, 
+HAVING should be used after GROUP BY
+
+```{sql connection=test_conn}
+SELECT Marital, COUNT(*) AS Number, MIN(Age) AS Agemin, MAX(Age) AS Agemax
+FROM surf 
+WHERE Gender = 'female'
+GROUP BY Marital
+HAVING MIN(Age)>20 
+ORDER BY MIN(Age)
+```
+
+Counting distinct values
+
+```{sql connection=test_conn}
+SELECT COUNT(Marital), COUNT(DISTINCT Marital) FROM surf
+```
+
+
+# Joins - connecting two or more tables together
+
+```{r}
+courses <- read.csv("courses.csv", stringsAsFactors=FALSE)
+students <- read.csv("students.csv", stringsAsFactors=FALSE)
+enrolments <- read.csv("enrolments.csv", stringsAsFactors=FALSE)
+courses
+students
+enrolments
+```
+
+```{r}
+dbWriteTable(test_conn, "students", students, overwrite=TRUE)
+dbWriteTable(test_conn, "courses", courses, overwrite=TRUE)
+dbWriteTable(test_conn, "enrolments", enrolments, overwrite=TRUE)
+dbListTables(test_conn)
+```
+
+
+```{sql connection=test_conn}
+SELECT * FROM courses
+```
+
+```{sql connection=test_conn}
+SELECT * FROM students
+```
+```{sql connection=test_conn}
+SELECT * FROM enrolments
+```
+
+```{sql connection=test_conn}
+SELECT * 
+FROM students LEFT JOIN enrolments
+ON students.idno=enrolments.idno
+ORDER BY students.idno
+```
+
+To make a right join - just do a left join the other way around
+```{sql connection=test_conn}
+SELECT * 
+FROM enrolments LEFT JOIN students
+ON students.idno=enrolments.idno
+ORDER BY enrolments.idno
+```
+
+An inner join only contains full matches
+
+Two ways to do an inner join
+```{sql connection=test_conn}
+SELECT * 
+FROM enrolments INNER JOIN students
+ON students.idno=enrolments.idno
+ORDER BY enrolments.idno
+```
+
+```{sql connection=test_conn}
+SELECT * 
+FROM enrolments, students
+WHERE students.idno=enrolments.idno
+ORDER BY enrolments.idno
+```
+
+Full outer join - include all rows from the left and right whether or not they match
+
+
+```{sql connection=test_conn}
+SELECT students.idno, students."first.name", students."last.name",
+       enrolments.course, enrolments.grade
+FROM enrolments LEFT JOIN students
+ON students.idno=enrolments.idno
+UNION
+SELECT students.idno, students."first.name", students."last.name",
+       enrolments.course, enrolments.grade
+FROM students LEFT JOIN enrolments
+ON students.idno=enrolments.idno
+ORDER BY students.idno
+```
+
+```{sql connection=test_conn}
+SELECT * 
+FROM students CROSS JOIN courses
+```
+
+Now let's do some more interesting examples
+
+```{sql connection=test_conn}
+SELECT idno, count(*) AS ncourses
+FROM enrolments
+GROUP BY idno
+ORDER BY idno
+```
+
+We can use a subquery to create a temporary table during another query
+```{sql connection=test_conn}
+SELECT * 
+FROM students, 
+     (SELECT idno, count(*) AS ncourses
+      FROM enrolments
+      GROUP BY idno) summary
+WHERE students.idno = summary.idno
+```
+
+```{sql connection=test_conn}
+SELECT * 
+FROM students LEFT JOIN
+     (SELECT idno, count(*) AS ncourses
+      FROM enrolments
+      GROUP BY idno) summary
+ON students.idno = summary.idno
+```
+
+
+```{sql connection=test_conn}
+CREATE TABLE moreinfo
+AS
+SELECT * 
+FROM students LEFT JOIN
+     (SELECT idno, count(*) AS ncourses
+      FROM enrolments
+      GROUP BY idno) summary
+ON students.idno = summary.idno
+```
+
+```{sql connection=test_conn}
+SELECT * FROM moreinfo
+```
+
+Fix the NULLs - make them zero
+```{sql connection=test_conn}
+UPDATE moreinfo SET ncourses = 0 WHERE ncourses IS NULL
+```
+
+```{sql connection=test_conn}
+SELECT * FROM moreinfo
+```
+
+# Joins in R
+
+merge() command
+
+
+# inner join
+```{r}
+merge(students, enrolments, by="idno")
+```
+
+# left join
+```{r}
+merge(students, enrolments, by="idno", all.x=TRUE)
+```
+
+# right join
+```{r}
+merge(students, enrolments, by="idno", all.y=TRUE)
+```
+
+# full outer join
+```{r}
+merge(students, enrolments, by="idno", all=TRUE)
+```
+
+# inner join - allowing for possibly differing column names
+```{r}
+merge(students, enrolments, by.x="idno", by.y="idno")
+```
+
+
+# three way joins
+
+```{r}
+students[1:3,]
+enrolments[1:3,]
+courses[1:3,]
+```
+
+
+```{sql connection=test_conn}
+SELECT * 
+FROM students, enrolments, courses
+WHERE students.idno=enrolments.idno AND 
+      enrolments.course=courses."course.code"
+```
+
+In R
+
+```{r}
+merge(merge(students, enrolments, by="idno"),
+      courses, by.x="course", by.y="course.code")
+```
+
+# Self Joins
+
+```{r}
+employees <- data.frame(
+  eid=c(1010,1230,1433,2923,4222),
+  name=c("Richard Arnold","John Haywood",
+         "Ivy Liu","Dave Harper","Grant Guilford"),
+  managerid=c(1433,1433,2923,4222,NA),
+  stringsAsFactors=FALSE
+)
+```
+
+```{r}
+employees
+```
+
+```{r}
+merge(employees, employees, by.x="managerid", by.y="eid", all.x=TRUE)
+```
+
+
+
+************************************************************************************************************
+************************************************************************************************************
+************************************ Test2 *****************************************************************
+************************************************************************************************************
+************************************************************************************************************
+
+```{r}
+chocolate <- read.csv("chocolate_reduced.csv", stringsAsFactors=FALSE)
+```
+Write R code to select only the columns "ref","company","company_location", "review_date" and "cocoa_percent" and "rating", and put them in a new data frame called choc_locations.
+```{r}
+chocolate[c("ref","company","company_location","review_date","cocoa_percent","rating")]
+```
+Use base R to answer this question.
+
+Write R code to extract the data for chocolate from companies in Switzerland, Belgium or New Zealand and put them in a new data frame called "choc_countries"
+```{r}
+choc_countries <- chocolate[chocolate$company_location == "Switzerland"|
+                              chocolate$company_location =="Belgium"|
+                              chocolate$company_location =="New Zealand",]
+choc_countries
+choc_countries <- chocolate[chocolate$company_location %in% c("Switzerland","Belgium","New Zealand"),]
+choc_countries
+```
+Use base R to answer this question
+
+ Write R code to count the number of entries from each company location in the "choc_countries" data frame.
+```{r}
+table(choc_countries$company_location)
+```
+ 
+Use base R to answer this question.
+
+Write R code to calculate the mean rating for chocolate bars from each company location in the "choc_countries" data frame.
+```{r}
+tapply(choc_countries$rating,choc_countries$company_location,mean)
+```
+
+Use base R to answer this question.
+
+Write R code to sort the "choc_countries" data frame in descending order of cocoa percent.
+```{r}
+choc_countries <- choc_countries[order(choc_countries$cocoa_percent,decreasing = TRUE),]
+```
+Use base R to answer this question.
+
+Write R code to extract the first 3 rows of the reordered "choc_countries" data frame and display those two rows as a single object.
+```{r}
+c <- choc_countries[1:2,]
+c
+
+```
+Use dplyr to answer this question.
+
+Going back to the original dataset you read in from "chocolate_reduced.csv", write dplyr code to select the columns "cocoa_percent",  "counts_of_ingredients", "country_of_bean_origin" "rating", "lecithin" and "sugar" and put them in a new data frame called "choc_ingredients".
+```{r}
+library(dplyr)
+choc_ingredients <- select(chocolate,"cocoa_percent","counts_of_ingredients","country_of_bean_origin","rating", "lecithin" ,"sugar")
+```
+Write the R code to exclude the chocolate bar which is 100% cocoa.
+
+```{r}
+filter(choc_ingredients,cocoa_percent != 100)
+```
+Write the R code to extract only those chocolate bars that have lecithin or sugar or both.
+
+```{r}
+filter(choc_ingredients,lecithin == "Yes"|sugar == "Yes")
+
+```
+
+Write the R code to convert the "counts_of_ingredients" column into a factor, with the levels of the factor being every integer from 2 to 6 in increasing order.
+
+```{r}
+choc_ingredients$counts_of_ingredients <- factor(choc_ingredients$counts_of_ingredients, levels= c("2", "3", "4", "5", "6"))
+
+```
+Use dplyr to answer this question.
+
+Using the data frame from the previous question, write R code to find the median rating for chocolate made with beans from each different country (i.e. the median rating for chocolate made with Australian beans, the median rating for chocolate made with Belgian beans, etc.).
+
+Store the summary data in a new object called "choc_summary" and name the median rating column "median_rating".
+```{r}
+tapply(choc_ingredients$rating, choc_ingredients$country_of_bean_origin, median)
+
+```
+
+```{r}
+a <- group_by(choc_ingredients,country_of_bean_origin)
+choc_summary <- summarise(a,median_rating=median(rating))
+choc_summary
+```
+Use dplyr to answer this question.
+
+
+Write R code to sort "choc_summary" in increasing order of median rating.
+
+```{r}
+
+arrange(choc_summary,median_rating)
+
+# this is base r below
+# choc_summary[order(choc_summary$median_rating, decreasing = FALSE),]
+```
+
+```{r}
+library(ggplot2)
+library(ggthemes)
+library(zoo)
+
+ggplot(choc_ingredients) + 
+  geom_point(aes(x=cocoa_percent,y=rating,colour =lecithin) ,position = "jitter")
+```
+
+
+
+
+
+

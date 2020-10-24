@@ -1,0 +1,218 @@
+---
+title: "Assignment 2"
+author: "Yan Zichu, 300476924"
+date: "30 July 2020"
+output: pdf_document
+---
+***
+# Q1. (1 Mark) Write R code to create and connect to a new SQLite database with storage file cricket.sqlite
+**ANS:**
+```{r}
+
+library(DBI)
+library(RSQLite)
+test_conn <- dbConnect(RSQLite::SQLite(), "cricket.sqlite")
+```
+# Q2. (2 Marks) Write R code to read the seven data files into R. Combine the three outcomes data files (T20, ODI and Test) into a single R object, and report the numbers of rows it has.
+**ANS:**
+```{r}
+grounds <- read.csv("grounds.csv", stringsAsFactors=FALSE)
+innings <- read.csv("innings.csv", stringsAsFactors=FALSE)
+players <- read.csv("players.csv", stringsAsFactors=FALSE)
+teams <- read.csv("teams.csv", stringsAsFactors=FALSE)
+wcricketODI <- read.csv("wcricket-ODI.csv", stringsAsFactors=FALSE)
+wcricketT20 <- read.csv("wcricket-T20.csv", stringsAsFactors=FALSE)
+wcricketTest <- read.csv("wcricket-Test.csv", stringsAsFactors=FALSE)
+
+wcricket<-rbind(wcricketODI,wcricketT20,wcricketTest)
+nrow(wcricket)
+```
+# Q3. (8 Marks) The dates in the innings.csv file are stored as characters, but are inconsistent. The ODI entries have a different format to the others.
+
+a.Create a new column innings.date which has a single consistent format.
+
+**ANS:**
+```{r}
+fmts<-c("%Y-%m-%d","%d/%m/%Y")
+# 1970-01-01 is standard of Unix/POSIX time.
+innings$innings.date <- as.Date(as.numeric(apply(outer(innings$date, fmts, as.Date), 1, na.omit)), "1970-01-01") 
+innings$innings.date <- as.character(innings$innings.date)
+head(innings)
+```
+
+b.Create another column innings.Rdate which has these dates stored in the R date type.
+**ANS:**
+```{r}
+
+fmts<-c("%Y-%m-%d","%d/%m/%Y")
+# 1970-01-01 is standard of Unix/POSIX time.
+innings$innings.Rdate <- as.Date(as.numeric(apply(outer(innings$date, fmts, as.Date), 1, na.omit)), "1970-01-01") 
+head(innings)
+```
+c.Find the range of dates of the innings in the database
+```{r}
+range(innings$innings.Rdate, na.rm=TRUE)
+```
+d.Draw a histogram of the dates of the innings recorded in the database.
+```{r}
+hist(innings$innings.Rdate, breaks="years", freq=TRUE, format="%Y", main="Innings")
+```
+
+# Q4. (2 Mark)  Write R code to copy the tables grounds, teams, players, innings and the combined outcomes table into your SQL database. List the tables in the database to verify that the tables have been created.
+**ANS:**
+```{r}
+library(DBI)
+library(RSQLite)
+test_conn <- dbConnect(RSQLite::SQLite(), "cricket.sqlite")
+DBI::dbWriteTable(test_conn, "grounds", grounds, overwrite=TRUE)
+DBI::dbWriteTable(test_conn, "innings", innings, overwrite=TRUE)
+DBI::dbWriteTable(test_conn, "players", players, overwrite=TRUE)
+DBI::dbWriteTable(test_conn, "teams", teams, overwrite=TRUE)
+DBI::dbWriteTable(test_conn, "wcricket", wcricket, overwrite=TRUE)
+
+head(wcricket)
+dbListTables(test_conn)
+```
+
+# Q5. (6 Marks) Using a CREATE TABLE command followed by an INSERT command, create a table called types in the database which can be used to decode the type column from its values ODI, Test, T20 into fuller descriptions One Day International, Test Match and Twenty20. Make the type column the primary key of the table. Use a SELECT command to show the contents of the table. 
+**ANS:**
+```{r}
+aa <- dbGetQuery(test_conn, "SELECT * FROM grounds")
+```
+
+```{sql connection=test_conn}
+a <- "SELECT * FROM grounds"
+```
+
+```{sql connection=test_conn}
+CREATE TABLE types (
+type TEXT,
+type_description TEXT,
+PRIMARY KEY(type)
+)
+```
+
+```{sql connection=test_conn}
+INSERT INTO types (type, type_description)
+VALUES
+("ODI","One Day International"),
+("Test","Test Match"),
+("T20","Twenty20")
+
+```
+
+```{sql connection=test_conn}
+SELECT * FROM types
+```
+# Q6. (2 Marks) 
+
+a. What is the function of having a primary key in a table in a database?
+
+**ANS:**
+It helps you link your table to other tables (relationships) using primary key as links.
+
+b.What does it mean for a column to be a foreign key in a table in a database?
+
+**ANS:**
+This referential link helps to match the foreign key column data with the data of the referenced table data. The referenced table is called the parent table and the table that involves a foreign key is called the child table. 
+
+# Q7. (4 Marks) Write SQL code to count the number of innings by type of match - show your output. Write the query two ways: one way just using the innings table, and a second way using the join to types to show the full description of the type column.
+**ANS:**
+```{sql connection=test_conn}
+SELECT type,COUNT(*) 
+FROM Innings 
+GROUP BY type
+```
+
+```{sql connection=test_conn}
+SELECT type_description,COUNT(type_description) 
+FROM Innings LEFT JOIN types
+ON Innings.type = types.type
+GROUP BY type_description
+
+```
+# Q8. (1 Mark) Write SQL code to show the maximum number of runs scored by any player in an innings.
+**ANS:**
+```{sql connection=test_conn}
+SELECT Wcricket."innings.id",Wcricket."player.id",MAX(innings_runs_scored_num)
+FROM Wcricket
+```
+# Q9. (2 Marks) Write SQL code to find players and innings where 200 or more runs were scored. Show the player id, innings id, and number of runs in your output. Order by DESCENDING number of runs scored.
+**ANS:**
+```{sql connection=test_conn}
+
+SELECT Wcricket."innings.id",Wcricket."player.id",innings_runs_scored_num
+FROM Wcricket
+WHERE innings_runs_scored_num >= 200
+GROUP BY innings_runs_scored_num 
+ORDER BY innings_runs_scored_num DESC
+
+```
+# Q10. (3 Marks) Modify the output of the previous question to include, in addition to the number of runs scored, the name of the player, the name of the team, the date and the name of the ground where the match took place.
+**ANS:**
+```{sql connection=test_conn}
+
+SELECT "ground.name","player.name","team.name",innings_runs_scored_num
+FROM Wcricket 
+LEFT JOIN Players 
+ON Wcricket."player.id" = Players."player.id"
+LEFT JOIN Teams 
+ON Wcricket."team.id" = Teams."team.id"
+LEFT JOIN Innings 
+ON Wcricket."innings.id" = Innings."innings.id"
+LEFT JOIN Grounds 
+ON Innings."ground.id" = Grounds."ground.id"
+WHERE innings_runs_scored_num >= 200
+ORDER BY innings_runs_scored_num DESC
+
+```
+# Q11. (2 Marks) Give the names of the players who have scored more than 6000 runs in total.
+**ANS:**
+
+```{sql connection=test_conn}
+
+
+
+SELECT "player.name" ,innings_runs_scored_num
+FROM (SELECT "player.name",SUM(innings_runs_scored_num) AS innings_runs_scored_num
+FROM Wcricket 
+LEFT JOIN Players 
+ON Wcricket."player.id" = Players."player.id"
+GROUP BY "player.name"
+ORDER BY innings_runs_scored_num DESC
+)
+WHERE innings_runs_scored_num > 6000
+
+```
+
+# Q12. (2 Marks) Calculate the average number of runs per player per innings for the three types of game. Include the type_description in your output as well as the short type code. (Hint: the function AVG() computes the mean of a set of numeric values in a column.)
+**ANS:**
+
+```{sql connection=test_conn}
+
+SELECT "player.name",AVG(wcricket.innings_runs_scored_num) AS AVG,innings.type,types.type_description
+
+FROM wcricket 
+LEFT JOIN players
+ON players."player.id" = wcricket."player.id"
+
+LEFT JOIN innings
+ON wcricket."innings.id" = innings."innings.id"
+
+LEFT JOIN types
+ON types.type = innings.type
+
+GROUP BY players."player.name"
+
+```
+
+# Q13. (2 Marks) Write R code that computes the number of seconds that New Zealand was in Level 4 lockdown earlier this year. Show the R code that creates the date-time objects needed, and the calculation of the time difference.
+COVID-19 Alert Level 3 came into force at 1:30pm Monday 23 March 2020. 
+COVID-19 Alert Level 4 came into force at 11:59pm Wednesday 25 March 2020.
+```{r}
+s <- c("23 4 2020 13:30:00", "25 4 2020 23:59:00")
+st <- as.POSIXct(s, format="%d %m %Y %H:%M:%S")
+difftime(st[2],st[1],units = "secs")
+
+```
+

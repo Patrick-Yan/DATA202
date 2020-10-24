@@ -1,0 +1,101 @@
+---
+title: "test"
+author: "Yan Zichu"
+date: "10/20/2020"
+output: pdf_document
+---
+```{r}
+library(DBI)
+library(RSQLite)
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(ggplot2)
+library(ggthemes)
+library(zoo)
+library(network)
+library(ergm)
+library(sna)
+library(lubridate)
+```
+
+```{r}
+a <- "2020-11-1"
+as.Date(a)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+dbDisconnect(test_conn)
+file.remove("newdb.sqlite")
+library(DBI)
+library(RSQLite)
+test_conn <- dbConnect(SQLite(), "newdb.sqlite")
+dbListTables(test_conn)
+```
+```{r}
+surf <- read.csv("surf.csv", stringsAsFactors=FALSE)
+dbWriteTable(test_conn, "surfshort", surf[1:10,1:8], overwrite=TRUE)
+DBI::dbWriteTable(test_conn, "grounds", grounds, overwrite=TRUE)
+```
+
+
+```{sql connection=test_conn}
+
+```
+
+```{sql connection=test_conn}
+
+```
+
+```{sql connection=test_conn}
+
+```
+
+```{sql connection=test_conn}
+
+```
+
+```{sql connection=test_conn}
+
+```
+
+```{sql connection=test_conn}
+
+```
+
+```{sql connection=test_conn}
+
+```
+

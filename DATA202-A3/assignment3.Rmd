@@ -1,0 +1,408 @@
+---
+title: "Assignment3"
+author: "Yan Zichu,300476924"
+date: "9/21/2020"
+output: pdf_document
+---
+***
+# Q1. (3 Mark) 
+
+```{r}
+this.list <- list(tags=LETTERS[1:20],1:10,names=c("Catherine","Maui"),diag(c(1,3,5)))
+```
+a. How long is the list?
+**ANS**
+```{r}
+length(this.list)
+```
+b. Write code to extract the vector 1:10 from the list.
+**ANS**
+```{r}
+vec <- this.list[[2]]
+vec
+```
+c. What type of object is produced by the following code? (this.list[c("tags","names")])
+**ANS**
+```{r}
+c <- this.list[c("tags","names")]
+str(c)
+```
+
+# Q2. (14 Marks)
+
+```{r}
+library(dplyr)
+library(tibble)
+library(tidyr)
+vehicles <- read.csv("motor_vehicle_modified.csv",stringsAsFactors = FALSE)
+```
+a. Find out how many vehicles have transmission type “4-gear auto” and are make Kia or Honda. [3 marks]
+
+**ANS**
+```{r}
+n <- vehicles[(vehicles$make =="Kia"|vehicles$make =="Honda") & vehicles$transmission_type == "4-gear auto",]
+nrow(n)
+```
+```{r}
+m <- filter(vehicles,make %in% c("Kia","Honda"), transmission_type == "4-gear auto")
+nrow(m)
+```
+
+b. Drop the columns vehicle_usage and vehicle_type from the dataset. [1 mark]
+
+**ANS**
+```{r}
+vehicles$vehicle_usage <- NULL
+vehicles$vehicle_type <- NULL
+ncol(vehicles)
+```
+
+```{r}
+vehicles <- read.csv("motor_vehicle_modified.csv",stringsAsFactors = FALSE)
+ncol(vehicles)
+n <- select(vehicles,-vehicle_usage,-vehicle_type)
+ncol(n)
+```
+
+c. Use the cut() function to create a new column called cc_rating_group which groups the cc_rating column into three levels labelled low, medium and high. [2 marks]
+**ANS**
+```{r}
+new <- mutate(vehicles, cc_rating_group = cut(cc_rating, 3, labels=c("low", "medium", "high")))
+head(new,3)
+```
+d. Produce a table summarising the vehicles from the dataset vehicles, showing the median NZ registration year for each cc rating group. [3 marks]
+
+**ANS**
+```{r}
+# base r
+tapply(new$first_nz_registration_year,new$cc_rating_group, median)
+```
+```{r}
+new2 <- group_by(new, cc_rating_group)# group_by convert the data frame to a tibble 
+summarise(new2, median(first_nz_registration_year),.groups = 'drop')
+# ,.groups = 'drop' can be removed
+```
+e. Create, but DO NOT DISPLAY, a contingency table called vehicles_country_status, giving the number of vehicles and for every combination of original country and import status. [2 marks]
+
+**ANS**
+```{r}
+#vehicles_country_status <- group_by(vehicles, original_country, import_status) %>%
+#                           select(original_country,import_status) %>%
+#                           mutate(number = n())
+
+#vehicles_country_status
+# GROUP_BY ALSO can combine two attributes e.g. original_country and import_status all possible combination
+vehicles_country_status <- group_by(vehicles, original_country, import_status)
+r <- summarise(vehicles_country_status,number=n(),.groups = 'drop')
+r
+```
+f. Now sort the countries in that table in decreasing order of the number of used cars, and keep the top 3 countries (still list all import statuses for those countries), and display the resulting table. [3 marks]
+
+**ANS**
+```{r}
+# used car!!! and top 3!!! 
+r <- filter(r,import_status %in% "used")
+r<- arrange(r, desc(number)) 
+r[1:3,]
+```
+
+# Q3. (14 Marks)
+
+```{r}
+library(ggplot2)
+library(ggthemes)
+library(zoo)
+
+earnings_wide <- read.csv("average_weekly_earnings.csv", stringsAsFactors = FALSE)
+earnings_wide$Date <- as.Date(as.yearqtr(earnings_wide$Date, format="%YQ%q"))
+```
+a. Convert the data from wide format to long format. Use the pivot_longer() function from tidyr. Name the new long-form dataset earnings_long and name the new earnings column Average.Weekly.Earnings. [3 marks]
+
+**ANS**
+```{r}
+earnings_wide
+earnings_long <- pivot_longer(earnings_wide, cols=c(Information.Media.Telecoms, Healthcare.SocialAssistance, Healthcare.SocialAssistance,Arts.Recreation.Other,Accommodation.Food,Total.All.Industries), names_to="Industries", values_to="Average.Weekly.Earnings")
+
+earnings_long
+```
+b. Produce a line plot of the long-format data using the ggplot2 package. Colour the lines by industry, and use a colorblind-friendly colour palette. Relabel the plot axes to make them more readable. [5 marks]
+
+**ANS**
+```{r}
+ggplot(earnings_long) + 
+    geom_line(aes(x=Date, color=Industries, y=Average.Weekly.Earnings),stat="identity",size = 2)+ scale_color_colorblind() + labs(x = "year", y = "avg earning", title = "avg earning by year")
+```
+c. Copy the following code into your answer script, and run it. Then write code to summarise the data up to 2005 to find the maximum earnings value within each time period, for each industry separately. Repeat for the data since 2005. [2 marks]
+```{r}
+## Method 1
+earnings_long_to2005 <- earnings_long[earnings_long$Date < '2006-01-01',]
+earnings_long_to2020 <- earnings_long[earnings_long$Date >= '2006-01-01',]
+
+## Method 2
+earnings_long_to2005 <- filter(earnings_long, Date < '2006-01-01')
+earnings_long_to2020 <- filter(earnings_long, Date >= '2006-01-01')
+```
+
+**ANS**
+```{r}
+s <-group_by(earnings_long_to2005,Industries) %>%
+    filter(Average.Weekly.Earnings == max(Average.Weekly.Earnings)) %>%
+    select(Date,maximum_earnings_value=Average.Weekly.Earnings)
+s
+```
+d. Add an extra column Years to each of the summaries (up to 2005 and after 2005) to indicate which time period it covers (as a character variable), then combine the two datasets using rbind(). [3 marks]
+
+**ANS**
+```{r}
+a <-mutate(earnings_long_to2005, Years = "<2005")
+
+b <- mutate(earnings_long_to2020, Years = ">=2005")
+
+c <- rbind(a,b)
+c
+```
+e. Plot a column chart of the highest earnings values by Years, again using ggplot2. The bars should be coloured by industry and positioned side-to-side, not stacked on top of each other. [4 marks]
+
+**ANS**
+```{r}
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+ggplot(c) + 
+    geom_bar(stat='identity', aes(x=Years, fill=Industries, y = (Average.Weekly.Earnings)), position = "dodge")+                 theme(axis.text.x=element_text(angle = -90, vjust=0.5))
+```
+# Q4. (4 Marks) Copy the following code into your RMarkdown answers document. It defines a function, and then runs that function.
+
+Run the code – it should stop with an error. Use the browser() command or the R option options(error=recover) or the debug() function to debug the function and find the two mistakes in it. The mistakes may include code that is incorrect, code that needs to be removed or code that is missing and needs to be added.
+
+If the ‘Stop’ button doesn’t close browser mode, go to the console and use the Esc key to escape from browser mode.
+
+For each of the two, either change the code to fix the bug or write a comment in your RMarkdown explaining where you think the bug is. Each mistake is worth 1 marks for finding it and 1 mark for fixing it, and partial credit will be given for incomplete answers.
+
+**ANS**
+```{r}
+library(tidyr)
+library(dplyr)
+food_prices <- read.csv("food_prices_yearmonth.csv", stringsAsFactors = FALSE)
+
+get_food_summary <- function(food_prices, 
+                           latest_year = max(food_prices$Year)) {
+    food_prices <- filter(food_prices, Year <= latest_year)
+  
+    fruit <- c("Oranges","Bananas","Apples","Kiwifruit",
+               "Sultanas (supermarket only)",
+               "Peaches - canned (supermarket only)", 
+               "Apricots", "Grapes","Mandarins","Berries","Pineapple")
+    
+    vegetables <- c("Lettuce","Broccoli","Cabbage","Tomatoes",
+                    "Carrots","Mushrooms","Potatoes",
+                    "Peas - frozen (supermarket only)",
+                    "Avocado","Beans","Capsicums","Cauliflower",
+                    "Celery","Courgettes","Cucumber","Kumara",
+                    "Mixed vegetables","Pnions","Parsnips",
+                    "Pears","Pumpkin")
+
+    food_prices$Fruit_veg <- rep(FALSE, nrow(food_prices))                       ## change NA to FALSE
+    food_prices$Liquid <- rep(FALSE, nrow(food_prices))
+    
+    item_parts <- strsplit(food_prices$Item, split = ", ")
+    
+    for (i in 1:nrow(food_prices)) {
+        this_item_parts <- item_parts[[i]]
+        item_type <- this_item_parts[1]
+        item_units <- this_item_parts[length(this_item_parts)]
+        if (item_type %in% fruit) {
+            food_prices$Fruit_veg[i] <- "Fruit"
+        } else if (item_type %in% vegetables) {
+            food_prices$Fruit_veg[i] <- "Vegetables"
+        } else  food_prices$Fruit_veg[i] <- "Other"                              ## add else
+        
+        if (food_prices$Fruit_veg[i] == "Other") {
+            if (length(grep("ml",item_units)) != 0 |
+                length(grep("litres",item_units)) != 0) {
+                    food_prices$Liquid <- TRUE                                   ## Capital TRUE
+            }
+          
+        }
+    }
+
+    fruit_veg_summary <- food_prices %>% 
+        group_by(Fruit_veg, Year, Month) %>% 
+        filter(Fruit_veg == "Fruit"||Fruit_veg == "Vegetables") %>%              ## add a filter
+        summarise(Max_price = max(Data_value))
+
+    liquids_summary <- food_prices %>%
+        ungroup() %>% 
+        filter(Liquid == TRUE) %>% 
+        group_by(Liquid, Year, Month) %>% 
+        summarise(Median_Price = median(Data_value))
+    
+    list(fruit_veg_summary = fruit_veg_summary,
+         liquids_summary = liquids_summary)
+}
+
+food_summary <- get_food_summary(food_prices, latest_year = 2015)
+head(food_summary$fruit_veg_summary)
+head(food_summary$liquids_summary)
+```
+
+
+
+#Q5. (22 Marks)
+#In this question, we will simulate the drawing of random cards from a standard 52-card deck of playing cards. A standard 52-card deck of playing cards consist of 13 cards (which we will consider as being numbered from 1 to 13, so 11 = jack, 12 = queen, 13 = king) for four suits/types (clubs, diamonds, hearts, spades).
+
+a. [2 marks] For a single random draw from the deck, what is the probability of selecting a card that is a club? What is the probability of selecting a card that is 7 or higher?
+
+**ANS**
+```{r}
+n <- 13/52
+cat("The probability of selecting a card that is a club is " , n, "\n")
+n2 <- (7 * 4) / 52
+cat("The probability of selecting a card that is 7 or highe is " , n2)
+
+```
+
+b. [8 marks] Write a custom function called card.draw to simulate the random drawing of cards with replacement from a standard 52-card deck of playing cards.
+
+**ANS**
+```{r}
+# 52-card deck 
+deck <- data.frame(
+  Number <- rep(1:13,4),
+  Suit <- c(rep("C",13), rep("D",13),rep("H",13),rep("S",13))
+)
+colnames(deck) <- c("Number", "Suit")
+```
+
+```{r}
+card.draw<- function(n , seed){
+  
+################### check n  ################### 
+  if(!is.numeric(n))
+  {
+    stop("'n' must be an integer.")
+  }else if(length(n) > 1)
+   {
+    stop("'n' consists of more than one element.")
+   }
+    # Check to see if n is 0 or negative or not a whole number.
+    else if((n <= 0) | (ceiling(n) != n))
+    {
+      stop("'n' must be a positive integer (i.e., whole number).")
+   }
+################### check seed  ################### 
+ if(!is.numeric(seed))
+  {
+    stop("'seed' must be an integer.")
+  }else if(length(seed) > 1)
+   {
+    stop("'seed' consists of more than one element.")
+   }
+    # Check to see if seed is 0 or negative or not a whole number.
+    else if((n < 0) | (ceiling(seed) != seed))
+    {
+    stop("'seed' must be a positive integer (i.e., whole number).")
+   }
+################### check end  ###################
+  set.seed(seed)
+  hand <- sample( 52 , n , replace= TRUE)
+  num<-list()
+  suit<-list()
+  for (i in 1:length(hand)) {
+    num[[i]] <- deck$Number[hand[i]]
+    suit[[i]] <- deck$Suit[hand[i]]
+    #each <- data.frame(num,suit)
+    #drawn <- rbind(drawn, each)
+  }
+
+  drawn <- do.call(rbind, Map(data.frame,Number = num,Suit=suit))
+
+
+  return(drawn)
+}
+```
+c.[2 marks] Show output for your code when it is run for the following function specifications:
+```{r error = TRUE}
+card.draw(n = 3.7, seed = 2) # Q1(c)i.
+card.draw(n = 3, seed = 'a') # Q1(c)ii.
+card.draw(n = c(3, 2), seed = c(1, 2)) # Q1(c)iii.
+card.draw(n = 4, seed = 0.3) # Q1(c)iv.
+```
+d. 
+[4 marks] Use your function to simulate 1,000,000 random card draws, and use ggplot to produce appropriate graphical displays to show relative frequencies (i.e. the distribution) of the outcomes of
+  i. the four suits 
+  
+**ANS**  
+```{r}
+N<-100000
+outcomes <- card.draw(n=N,seed=0)
+ggplot(as.data.frame(outcomes)) + geom_bar(aes(x=Suit, y = (..count..)/N))+ labs(title = "Relative Frequencies of the four suits \nFrom 10,000,000 Samples From the Probability Mass Function")
+```
+  ii. the number outcomes for cards.
+  
+**ANS** 
+```{r}
+ggplot(as.data.frame(outcomes)) + geom_bar(aes(x=Number, y = (..count..)/N))+ labs(title = "Relative Frequencies of the number outcomes for cards \nFrom 10,000,000 Samples From the Probability Mass Function")
+```
+e. [2 marks] Use your function to simulate 1,000,000 random card draws, and calculate the proportion of the cards drawn that are
+  i. clubs
+  
+**ANS**
+```{r}
+n <- count(outcomes[outcomes$Suit =="C",])
+n/N
+```
+
+ ii. 7 or higher
+ 
+**ANS**
+```{r}
+n <- count(outcomes[outcomes$Number >=7,])
+n/N
+```
+
+f. [4 marks] Finally, calculate the exact expected value and variance for the number outcome for a randomly drawn card from the deck. Use a simulation of 1,000,000 random card draws to estimate the expected value and variance to verify the exact values you calculated.
+```{r}
+
+Number1 <- 1:13
+Suit1 <- c("C", "D","H","S")
+
+d <- data.frame(
+  Card <- character(),
+  Prob <- double()
+)
+
+for (i in Suit1) {
+  for (j in Number1) {
+
+    prob <- count(outcomes[outcomes$Suit==i & outcomes$Number==j,]) / N
+    
+    card <- paste(i, as.character(j), sep=" ")
+    
+    data <- data.frame(card,prob)
+
+    d <- rbind(d,data)
+  }
+}
+colnames(d) <- c("Card","Prob")
+head(d)
+
+```
+
+```{r}
+Number2 <- rep(1:13,4)
+EX <- sum(Number2 * d$Prob)
+paste("Expected value is", EX)
+
+VX <- sum(d$Prob * (Number2 - EX)^2)
+paste("Variance is", VX)
+
+```
+
+
+
+
+
+
+
+
+
+
