@@ -1,0 +1,311 @@
+---
+title: "Assignment 1"
+author: "Yan Zichu, 300476924"
+date: "30 July 2020"
+output: pdf_document
+---
+
+***
+# Q1 (3 Marks): Classify the following variables as categorical/numerical and further classify as logical,nominal, ordinal, binary, continous or discrete. Give the R data type that corresponds to each.
+**ANS:**
+a.Earthquake magnitude : Numeric variable - Continous variable - Numeric (R data type)
+
+b.Presence of infection: Categorical variable - Boolean variable - Logical (R data type)
+
+c.Length of time to symptoms following infection : Numeric variable - Continous variable - Numeric,double (R data type)
+
+d.Patient reported level of pain (scale 0-5) : Categorical variable - Ordinal variable - Character (R data type)
+
+e.Aircraft speed : Numeric variable - Continous variable - Numeric,double (R data type)
+
+f.Brand of noodles : Categorical variable - Nominal variable -  Character (R data type)
+
+g.Number of patients seen in a day : Numeric variable - Discrete variable - Integer (R data type)
+
+h.Mean number of patients seen in a day : Numeric variable - Continuous variable - Double (R data type)
+
+i.Proportion of ground covered with vegetation :Numeric variable - Continous variable - Double (R data type)
+
+***
+# Q2 (2 Marks): Find out and explain what happens when the following code is evaluated
+**ANS:**
+```{r}
+x <- y <- 5
+x
+y
+```
+As we can see, x and y are equal 5. Because we assign 5 to y first and then assign value of y (5) to x, they have same value.
+
+***
+# Q3. (2 Marks) When measuring angles values less than 0 or greater than 360 can be converted into the range [0,360]. Write R code that takes the vector x of angles c(45, 345, 600, 23, 705) and converts them into the correct angles in the range [0,360].
+**ANS:**
+```{r}
+x <- c(45, 345, 600, 23, 705)
+x%%360
+
+```
+
+***
+# Q4. (7 Marks) 
+##     a.Write R code to define the following objects
+**ANS:**
+```{r}
+x <- matrix(c(2,3,4,2),ncol = 1,byrow=FALSE)
+x
+y <- matrix(c(2,3),ncol = 1,byrow=FALSE)
+y
+z <- matrix(c(12,3,13,-1,11,6),ncol = 3,byrow=FALSE)
+z
+
+```
+
+##      b.Write R code that will extract the second column of z and save it to a vector s
+**ANS:**
+```{r}
+s <- z[,2]
+s
+```
+
+##      c.Write R code that will append y onto the end of x - showing your output to verify the result
+**ANS:**
+```{r}
+
+rbind(x,y) 
+
+```
+##      d.Write R code that will extract the values of the elements of x that are less than 3.
+**ANS:**
+```{r}
+x[x<3]
+```
+##      e.Write R code that will extract the positions of the elements of x that are less than 3.
+**ANS:**
+```{r}
+which(x < 3)
+
+```
+
+***
+# Q5. (22 Marks) Read the dataset ypd.csv from the course website: it contains a subset of survey responses from young people in Slovakia, and is availble from https://www.kaggle.com/miroslavsabo/young-people-survey.
+Note: You can assume that the file ypd.csv is in the working directory of R when you submit your solution.
+Then, giving and executing all relevant R code:
+
+**ANS:**
+##      a.Name and classify the type of each variable in the dataset.
+```{r}
+ypd <- read.csv("ypd.csv",stringsAsFactors = FALSE)
+names(ypd)
+str(ypd)
+```
+
+##      b.Give the dimensions of the data in the dataset (number of rows and columns).
+**ANS:**
+```{r}
+nrow(ypd)
+ncol(ypd)
+```
+
+##      c.Remove all rows from the data frame which have missing height, saving the result in a new data frame. Use this new data frame for the rest of this question.
+**ANS:**
+```{r}
+newypd <- ypd[complete.cases(ypd[,"Height"]),]
+
+ypd1 <- ypd[!is.na(ypd$Height),]
+
+```
+
+##      d.Give the number of rows of data in the new data frame.
+**ANS:**
+```{r}
+nrow(newypd)
+```
+
+##      e.Showing your code, draw suitable graphical displays of Prefer.fast.songs, Height and Have.difficulty.getting.up. Label both axes, and give each graph a title.
+**ANS:**
+```{r}
+hist(ypd1$Prefer.fast.songs, main="Prefer.fast.songs", xlab="Songs", col="lightblue",
+     xlim = c(1,5),ylim=c(0,600),breaks = 17)
+
+barplot(table(ypd1$Prefer.fast.songs), xlab="Preference for fast songs over slow ones", 
+        ylab="Frequency", main="Preference for fast songs")
+```
+
+```{r}
+hist(newypd$Height, main="Height", xlab="height", col="lightblue",xlim = c(130,230))
+```
+
+```{r}
+hist(newypd$Have.difficulty.getting.up, main="Have.difficulty.getting.up.", xlab="Have.difficulty.getting.up.", col="lightblue",breaks = 17)
+
+barplot(table(ypd1$Have.difficulty.getting.up), xlab="Level of Difficulty Getting Up", 
+        ylab="Frequency", main="Getting up", col="grey")
+```
+
+##      f.Give values for the minimum, lower quartile, median, mean, upper quartile and maximum value of Age and also give the number of observations with missing values of Age.
+**ANS:**
+```{r}
+print(paste0("Sum.Na: ",sum(is.na(newypd$Age))))
+print(paste0("Min: ",min(newypd$Age,na.rm = TRUE)))
+print(paste0("Max: ",max(newypd$Age,na.rm = TRUE)))
+print(paste0("Median: ",median(newypd$Age,na.rm = TRUE)))
+print(paste0("Mean: ",mean(newypd$Age,na.rm = TRUE)))
+print(paste0("Lower quantile: ",quantile(newypd$Age,.25,na.rm = TRUE)))
+print(paste0("Upper quantile: ",quantile(newypd$Age,.75,na.rm = TRUE)))
+
+summary(newypd$Age) # just wanna check whether Na are all removed
+```
+
+##      g.Give a table of totals and percentages (to 1 decimal place) for the 5 levels of Have.difficulty.getting.up, showing the missing (NA) category as a 6th option. What percentage of people score on the lowest two levels of the scale?
+**ANS:**
+```{r}
+table <- data.frame(level=c("1","2","3","4","5","6"),
+                    percentage=round(table(factor(newypd$Have.difficulty.getting.up, exclude = NULL))
+                                     / nrow(newypd)*100,1),
+                    total = table(factor(newypd$Have.difficulty.getting.up, exclude = NULL)), 
+                    stringsAsFactors = FALSE)
+table
+```
+Except NA, Level1 (8.3%) and Level2(14.5%) are lowest
+
+##      h.Find the level of difficulty getting up experienced by the shortest and tallest people in the data set.
+**ANS:**
+```{r}
+newypd$Have.difficulty.getting.up[which.min(newypd$Height)]
+newypd$Have.difficulty.getting.up[which.max(newypd$Height)]
+
+```
+
+##      i.Make a table of the number of people in the data set at each level of education. Make sure the table is ordered by increasing level of education.
+**ANS:**
+```{r}
+# wrong
+table <- data.frame(sort(table(newypd$Education)))
+table
+# correct
+levs <- unique(ypd1$Education)
+levs
+levs <- levs[c(6,3,2,1,4,5,7)]
+levs
+table(factor(ypd1$Education, levels=levs))
+
+```
+
+***
+# Q6 (10 Marks) The Fibonacci sequence is an infinite sequence of numbers that begins with the pair of numbers 0 and 1. Each successive number is then the sum of the two preceding elements. So the third element is 0+1=1, the fourth is 1+1=2 etc.
+## The following function computes the first n elements of the Fibonacci sequence.
+
+##      a.Verify that the function works by using it to calcuate the first 10 elements of the Fibonacci sequence. Show the R call and the output.
+**ANS:**
+```{r}
+# Given code
+fibonacci <- function(n) {
+  x <- c(0,1)
+  for(i in 3:n) {
+    x[i] <- x[i-1] + x[i-2]
+  }
+  return(x)
+}
+
+fibonacci(10)
+
+```
+
+##      b.Explain briefly how the function works. The body of the function has five lines. Explain what happens in the three sections: line 1, lines 2-4, and line 5.
+**ANS:**
+line 1: Creating a function which contains one parameter and function name is fibonacci
+
+line 2-4: "x <- c(0,1)" : Initialize the x, assign a vector (0,1) to x.
+          First line in forloop : Give a range to the forloop, traverse i from 3(because 0 and 1 are first 2 elements) to                                      n(the parameter in function)
+          Second line in forloop : This is the main body of the loop, this line aim to calculate and assign the next value                                      based on sum of previous 2 values. e.g. when i =3 then "(x[i-1] = 1) + (x[i-2] = 0) =                                        (x[i] = 1)"
+          
+line 5 : This function tend to give(return) us a vector variable which contains a finite Fibonacci sequence we defined
+
+##      c.The function goes wrong if we try to call it for n<=2. Try it! Explain what goes wrong and why.
+Because of this step "x[i] <- x[i-1] + x[i-2]", when n <= 2, we will not get any value from x[0],x[-1] or other x[negative value] as in those location we did not store any value and negative location value is invalid.
+
+##      d.Fix the function by modifying to (1) terminate with an error (and a helpful error message) if n<=0, and (2) to return only the first or the first+second elements if n=1 or n=2 respectively. Give the R code for the function that fixes the problem.
+**ANS:**
+```{r}
+fibonacci <- function(n) {
+  
+  if(n>=3){
+    x <- c(0,1)
+    for(i in 3:n) {
+      x[i] <- x[i-1] + x[i-2]
+    }
+    return(x)
+  }else {
+    if(n<=0){
+      return("ERROR: 0 is invalid, Please enter the number >=3 :D")
+    }
+    if(n==1){
+      return(0)
+    }
+    if(n==2){
+      return(0+1)
+    }
+  }
+}
+
+fibonacci(1)
+fibonacci(2)
+fibonacci(0)
+
+```
+
+***
+# Q7 (8 Marks)
+##      a.Explain the difference between the action of the statements install.packages("gdata") and library(gdata). What is gdata here?
+**ANS:**
+install.packages("gdata"): install a package called "gdata".
+
+library(gdata): import a package called "gdata".
+
+"gdata" is a package which contains a lot of functions.
+
+##      b.When the package gdata is loaded using the command library(gdata) a number of warning messages are printed to the screen by R. One of them is the following:
+        The following object is masked from ‘package:utils’:  object.size
+## Explain what this warning message means.
+**ANS:**
+When there are two functions with the same name, the search will stop and call when the first one is found. So when we want to call second one the warning will come out and say second one is masked.
+
+##      c.Explain what happens when the following code is executed
+```{r}
+ff <- function(x, y) {
+  #print(x)# 2
+  #print(y)# 3
+  #print(a)# 4
+  z <- x + y + a
+  a <- 2
+  #print(a)# 5
+  return(z)# 6
+}
+x <- 10
+y <- 15
+a <- 5
+#print(a) # 1
+ff(1, 3) + a
+#print(a)# 7
+```
+**ANS:**
+1. We should know 'x <- 10;y <- 15' these two lines are useless which just simply assign value to two variables.
+
+2. ff(1, 3) + a: This is the main part of this code, a(Global variable) is 5, although variable a will be changed in the function but the change will happen after this line ("ff(1, 3) + a") which means a will not change here, it is still 5.
+
+3. So now we can focus on "ff(1, 3)" this part, ff have 2 parameters x and y which are 1 and 3 respectively, so "z <- x + y + a" : z = 1 + 3 + 5 -> z = 9
+
+4. Based on step 2 and 3, all values are known in ff(1, 3) + a, so it is 9 + 5 = 14
+
+##      d.Explain what happens when the following code is executed
+```{r}
+data(cars)
+```
+**ANS:**
+Import an existing dataset contains 50 cars‘ information (speed and dist)
+
+##      e.What is the meaning of the text utils:: in the following R code?
+```{r}
+utils::str(cars)
+```
+**ANS:**
+call a function "str" in the utils package.(Compactly Display the Structure of an Arbitrary R Object)
